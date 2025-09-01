@@ -1,0 +1,52 @@
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(const MaterialApp(
+    home: GestureLayoutDemo(),
+  ));
+}
+
+class GestureLayoutDemo extends StatefulWidget {
+  const GestureLayoutDemo({super.key});
+
+  @override
+  State<GestureLayoutDemo> createState() => _GestureLayoutDemoState();
+}
+
+class _GestureLayoutDemoState extends State<GestureLayoutDemo> {
+  int counter = 0;
+
+  void incrementCounter() {
+    setState(() {
+      counter++;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Flutter UI on Zapp.run')),
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            'Counter: $counter',
+            style: const TextStyle(fontSize: 30),
+          ),
+          const SizedBox(height: 20),
+          GestureDetector(
+            onTap: incrementCounter,
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              color: Colors.blue,
+              child: const Text(
+                'Tap me!',
+                style: TextStyle(fontSize: 24, color: Colors.white),
+              ),
+            ),
+          )
+        ],
+      ),
+    );
+  }
+}

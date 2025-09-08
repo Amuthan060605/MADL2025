@@ -1,0 +1,108 @@
+import 'dart:convert';
+import 'dart:html' as html;
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(const BMIApp());
+}
+
+class BMIApp extends StatelessWidget {
+  const BMIApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'BMI Calculator',
+      home: const BMIHome(),
+    );
+  }
+}
+
+class BMIHome extends StatefulWidget {
+  const BMIHome({super.key});
+
+  @override
+  State<BMIHome> createState() => _BMIHomeState();
+}
+
+class _BMIHomeState extends State<BMIHome> {
+  final TextEditingController heightController = TextEditingController();
+  final TextEditingController weightController = TextEditingController();
+  String bmiResult = '';
+
+  @override
+  void initState() {
+    super.initState();
+    loadData();
+  }
+
+  void loadData() {
+    String? data = html.window.localStorage['bmi_data'];
+    if (data != null) {
+      Map<String, dynamic> jsonData = jsonDecode(data);
+      heightController.text = jsonData['height'].toString();
+      weightController.text = jsonData['weight'].toString();
+    } else {
+      heightController.text = '170';
+      weightController.text = '70';
+    }
+  }
+
+  void saveData(int height, int weight) {
+    Map<String, dynamic> jsonData = {
+      'height': height,
+      'weight': weight,
+    };
+    html.window.localStorage['bmi_data'] = jsonEncode(jsonData);
+  }
+
+  void calculateBMI() {
+    double height = double.tryParse(heightController.text) ?? 0;
+    double weight = double.tryParse(weightController.text) ?? 0;
+    if (height > 0 && weight > 0) {
+      double bmi = weight / ((height / 100) * (height / 100));
+      setState(() {
+        bmiResult = 'BMI: ${bmi.toStringAsFixed(2)}';
+      });
+      saveData(height.toInt(), weight.toInt());
+    } else {
+      setState(() {
+        bmiResult = 'Please enter valid values';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('BMI Calculator')),
+      body: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            TextField(
+              controller: heightController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'Height (cm)'),
+            ),
+            TextField(
+              controller: weightController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'Weight (kg)'),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: calculateBMI,
+              child: const Text('Calculate BMI'),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              bmiResult,
+              style: const TextStyle(fontSize: 24),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

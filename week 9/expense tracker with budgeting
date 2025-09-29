@@ -1,0 +1,216 @@
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(const ExpenseTrackerApp());
+}
+
+class ExpenseTrackerApp extends StatelessWidget {
+  const ExpenseTrackerApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Expense Tracker',
+      theme: ThemeData(primarySwatch: Colors.green),
+      home: const ExpenseTrackerPage(),
+    );
+  }
+}
+
+class Expense {
+  final String description;
+  final double amount;
+  final DateTime date;
+
+  Expense({required this.description, required this.amount, required this.date});
+}
+
+class ExpenseTrackerPage extends StatefulWidget {
+  const ExpenseTrackerPage({super.key});
+
+  @override
+  State<ExpenseTrackerPage> createState() => _ExpenseTrackerPageState();
+}
+
+class _ExpenseTrackerPageState extends State<ExpenseTrackerPage> {
+  double _budget = 0.0;
+  final List<Expense> _expenses = [];
+
+  final _budgetController = TextEditingController();
+  final _descController = TextEditingController();
+  final _amountController = TextEditingController();
+
+  double get totalExpenses =>
+      _expenses.fold(0.0, (sum, item) => sum + item.amount);
+
+  double get remainingBudget => _budget - totalExpenses;
+
+  void _setBudget() {
+    final input = _budgetController.text.trim();
+    final value = double.tryParse(input);
+    if (value != null && value >= 0) {
+      setState(() {
+        _budget = value;
+      });
+      _budgetController.clear();
+      FocusScope.of(context).unfocus();
+    } else {
+      _showError('Please enter a valid non-negative budget.');
+    }
+  }
+
+  void _addExpense() {
+    final desc = _descController.text.trim();
+    final amountText = _amountController.text.trim();
+    final amount = double.tryParse(amountText);
+
+    if (desc.isEmpty) {
+      _showError('Please enter a description.');
+      return;
+    }
+    if (amount == null || amount <= 0) {
+      _showError('Please enter a valid positive amount.');
+      return;
+    }
+
+    setState(() {
+      _expenses.add(Expense(description: desc, amount: amount, date: DateTime.now()));
+    });
+    _descController.clear();
+    _amountController.clear();
+    FocusScope.of(context).unfocus();
+  }
+
+  void _showError(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), backgroundColor: Colors.redAccent),
+    );
+  }
+
+  @override
+  void dispose() {
+    _budgetController.dispose();
+    _descController.dispose();
+    _amountController.dispose();
+    super.dispose();
+  }
+
+  String _formatCurrency(double value) => '\$${value.toStringAsFixed(2)}';
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Expense Tracker with Budgeting'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            // Budget input
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _budgetController,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    decoration: const InputDecoration(
+                      labelText: 'Set Budget',
+                      border: OutlineInputBorder(),
+                    ),
+                    onSubmitted: (_) => _setBudget(),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                ElevatedButton(
+                  onPressed: _setBudget,
+                  child: const Text('Set'),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 20),
+
+            // Budget summary
+            Card(
+              color: remainingBudget >= 0 ? Colors.green[50] : Colors.red[50],
+              child: ListTile(
+                title: Text('Budget: ${_formatCurrency(_budget)}'),
+                subtitle: Text('Total Expenses: ${_formatCurrency(totalExpenses)}'),
+                trailing: Text(
+                  'Remaining: ${_formatCurrency(remainingBudget)}',
+                  style: TextStyle(
+                    color: remainingBudget >= 0 ? Colors.green : Colors.red,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // Expense input fields
+            Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: TextField(
+                    controller: _descController,
+                    decoration: const InputDecoration(
+                      labelText: 'Expense Description',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  flex: 1,
+                  child: TextField(
+                    controller: _amountController,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    decoration: const InputDecoration(
+                      labelText: 'Amount',
+                      border: OutlineInputBorder(),
+                    ),
+                    onSubmitted: (_) => _addExpense(),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                ElevatedButton(
+                  onPressed: _addExpense,
+                  child: const Text('Add'),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 20),
+
+            // Expense list
+            Expanded(
+              child: _expenses.isEmpty
+                  ? const Center(child: Text('No expenses added yet.'))
+                  : ListView.builder(
+                      itemCount: _expenses.length,
+                      itemBuilder: (context, index) {
+                        final exp = _expenses[index];
+                        return Card(
+                          child: ListTile(
+                            title: Text(exp.description),
+                            subtitle: Text(
+                              '${exp.date.toLocal().toString().split(' ')[0]}',
+                            ),
+                            trailing: Text(_formatCurrency(exp.amount)),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
